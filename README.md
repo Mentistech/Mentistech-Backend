@@ -22,6 +22,7 @@ Plataforma de suporte psicológico corporativo com análise de IA e agendamento 
   - [Consultas](#consultas)
 - [Formato de Erro](#formato-de-erro)
 - [Testes](#testes)
+- [Docker](#docker)
 - [CI/CD](#cicd)
 - [Estrutura de Pastas](#estrutura-de-pastas)
 
@@ -176,21 +177,55 @@ PORT=3000
 
 ## Executando o Projeto
 
-```bash
-# Desenvolvimento (hot reload)
-npm run start:dev
+### Sem Docker (desenvolvimento)
 
-# Produção
-npm run build
-npm run start:prod
+```bash
+# Hot reload
+npm run start:dev
 
 # Verificação de tipos
 npx tsc --noEmit
 ```
 
-O servidor exibirá no console:
+### Com Docker (recomendado)
+
+```bash
+# Subir API + PostgreSQL local
+docker compose up -d --build
+
+# Aplicar migrations no banco do container
+docker exec mentistech-api npx prisma migrate deploy
+
+# Ver logs em tempo real
+docker compose logs -f api
+
+# Parar tudo
+docker compose down
+
+# Parar e apagar dados do banco
+docker compose down -v
+```
+
+O servidor responde em `http://localhost:3000` e exibe no console:
 ```
 MentisTech Backend rodando na porta 3000
+```
+
+### Health check
+
+```bash
+curl http://localhost:3000/health
+```
+
+Resposta esperada:
+```json
+{
+  "status": "ok",
+  "timestamp": "2026-05-09T02:17:24.281Z",
+  "uptime": 29,
+  "version": "0.0.1",
+  "environment": "production"
+}
 ```
 
 ---
@@ -636,25 +671,100 @@ npm run test:watch
 
 ---
 
+## Docker
+
+### Imagem
+
+A imagem usa **build multi-stage** em 4 estágios para minimizar o tamanho final:
+
+```
+deps         → npm ci (todas as deps)
+builder      → prisma generate + nest build
+prod-deps    → npm ci --omit=dev (só produção)
+production   → prod-deps + .prisma/ + @prisma/ + dist/
+```
+
+O estágio `production` roda com usuário não-root (`mentis`) e inclui `HEALTHCHECK` nativo verificando `GET /health` a cada 30s.
+
+### Comandos úteis
+
+```bash
+# Subir tudo do zero
+docker compose up -d --build
+
+# Aplicar migrations (necessário na primeira subida)
+docker exec mentistech-api npx prisma migrate deploy
+
+# Logs em tempo real
+docker compose logs -f api
+
+# Status dos containers
+docker compose ps
+
+# Parar sem apagar dados
+docker compose stop
+
+# Parar e apagar volume do banco
+docker compose down -v
+
+# Inspecionar variáveis de ambiente do container
+docker exec mentistech-api env | grep -v ANTHROPIC
+```
+
+### Containers em execução
+
+| Container | Imagem | Porta | Status |
+|---|---|---|---|
+| `mentistech-api` | `mentistech-backend-api` | `3000→3000` | healthy |
+| `mentistech-db` | `postgres:15-alpine` | `5432→5432` | healthy |
+
+---
+
 ## CI/CD
 
-O arquivo `.github/workflows/ci.yml` define um pipeline de 4 etapas executado em todo push e pull request para `main` e `develop`:
+O projeto possui **três workflows** no GitHub Actions:
+
+| Workflow | Arquivo | Disparado por |
+|---|---|---|
+| CI | `ci.yml` | Push e PR em `main` e `develop` |
+| CD Staging | `cd-staging.yml` | Push em `develop` |
+| CD Produção | `cd-production.yml` | Push em `main` + aprovação manual |
+
+### Fluxo completo
 
 ```
-[1] dependencies   npm ci + cache de node_modules
-        ↓
-[2] test           prisma generate → npm test:cov → upload coverage
-        ↓
-[3] build          tsc --noEmit → npm build → upload dist
-        ↓
-[4] docs           upload API.md → resumo no GitHub Step Summary
-                   (apenas na branch main)
+push/PR
+  │
+  ▼
+ci.yml: lint → typecheck → test:cov → build → docker-build
+  │                    │
+  │ push develop       │ push main
+  ▼                    ▼
+cd-staging.yml      cd-production.yml
+  │                    │
+  ├─ build & push      ├─ build & push (latest + versão + sha)
+  │  (tag: staging)    │
+  ├─ migrate           ├─ ✋ Aprovação manual
+  ├─ deploy SSH        ├─ migrate
+  └─ health check      ├─ deploy Blue-Green (zero downtime)
+                       ├─ health check
+                       └─ notificação + step summary
 ```
 
-**Artefatos gerados:**
-- `coverage-report/` — relatório de cobertura de testes (7 dias)
-- `dist/` — build compilado (3 dias)
-- `api-documentation/` — `API.md` (30 dias)
+### Secrets necessários
+
+| Secret | Usado em |
+|---|---|
+| `STAGING_DATABASE_URL` | cd-staging |
+| `PRODUCTION_DATABASE_URL` | cd-production |
+| `JWT_SECRET` | cd-staging, cd-production |
+| `ANTHROPIC_API_KEY` | cd-staging, cd-production |
+| `STAGING_SSH_HOST/USER/KEY` | cd-staging |
+| `PRODUCTION_SSH_HOST/USER/KEY` | cd-production |
+
+**Variables (não secrets):** `STAGING_URL`, `PRODUCTION_URL`
+
+Para ativar aprovação manual em produção: **Settings → Environments → production → Required reviewers**.
 
 ---
 
@@ -664,7 +774,12 @@ O arquivo `.github/workflows/ci.yml` define um pipeline de 4 etapas executado em
 mentistech-backend/
 ├── .github/
 │   └── workflows/
-│       └── ci.yml                  # Pipeline CI GitHub Actions
+│       ├── ci.yml                  # CI: lint + typecheck + test + docker-build
+│       ├── cd-staging.yml          # CD staging (develop → deploy automático)
+│       └── cd-production.yml       # CD produção (main → aprovação → blue-green)
+├── Dockerfile                      # Multi-stage: deps→builder→prod-deps→production
+├── docker-compose.yml              # Ambiente local: API + PostgreSQL
+├── .dockerignore
 ├── prisma/
 │   ├── schema.prisma               # Modelos e enums do banco
 │   └── migrations/                 # Histórico de migrations

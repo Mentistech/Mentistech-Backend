@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
+import { AppController } from './app.controller';
 import { AuthModule } from './auth/auth.module';
 import { CheckinModule } from './checkin/checkin.module';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
@@ -18,6 +19,7 @@ import { PsicologoModule } from './psicologo/psicologo.module';
     PsicologoModule,
     ConsultaModule,
   ],
+  controllers: [AppController],
   providers: [
     { provide: APP_GUARD, useClass: JwtAuthGuard },
     { provide: APP_GUARD, useClass: RolesGuard },

@@ -1,0 +1,53 @@
+services:
+
+  # ─── PostgreSQL local ──────────────────────────────────
+  db:
+    image: postgres:15-alpine
+    container_name: mentistech-db
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: mentistech
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d mentistech"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    networks:
+      - mentistech-net
+
+  # ─── API NestJS ────────────────────────────────────────
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+    container_name: mentistech-api
+    restart: unless-stopped
+    ports:
+      - "${PORT:-3000}:3000"
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/mentistech
+      JWT_SECRET: ${JWT_SECRET:-mentistech-jwt-secret-256bits}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      PORT: 3000
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - mentistech-net
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  mentistech-net:
+    driver: bridge
