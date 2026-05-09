@@ -9,7 +9,7 @@ async function bootstrap() {
     app.useGlobalPipes(new common_1.ValidationPipe({ whitelist: true, transform: true }));
     app.useGlobalFilters(new http_exception_filter_1.HttpExceptionFilter());
     app.enableCors();
-    const port = process.env.PORT ?? 7777;
+    const port = process.env.PORT ?? 3000;
     await app.listen(port);
     console.log(`MentisTech Backend rodando na porta ${port}`);
 }
