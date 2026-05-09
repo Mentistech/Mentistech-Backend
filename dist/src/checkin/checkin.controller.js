@@ -30,6 +30,9 @@ let CheckinController = class CheckinController {
     listarMeus(user) {
         return this.checkinService.listarMeus(user.usuarioId);
     }
+    buscarPorId(id, user) {
+        return this.checkinService.buscarPorId(id, user);
+    }
     buscarAnalise(id, user) {
         return this.checkinService.buscarAnalise(id, user);
     }
@@ -52,6 +55,14 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", void 0)
 ], CheckinController.prototype, "listarMeus", null);
+__decorate([
+    (0, common_1.Get)(':id'),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, current_user_decorator_1.CurrentUser)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", void 0)
+], CheckinController.prototype, "buscarPorId", null);
 __decorate([
     (0, common_1.Get)(':id/analise'),
     __param(0, (0, common_1.Param)('id')),

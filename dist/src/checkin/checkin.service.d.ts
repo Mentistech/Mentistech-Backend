@@ -28,6 +28,12 @@ export declare class CheckinService {
         realizadoEm: Date;
         colaboradorId: string;
     })[]>;
+    buscarPorId(checkinId: string, usuario: UsuarioLogado): Promise<{
+        id: string;
+        humor: import("@prisma/client").$Enums.HumorTipo;
+        nivelEstresse: number;
+        realizadoEm: Date;
+    }>;
     buscarAnalise(checkinId: string, usuario: UsuarioLogado): Promise<{
         id: string;
         humor: import("@prisma/client").$Enums.HumorTipo;

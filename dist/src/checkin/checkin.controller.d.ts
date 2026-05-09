@@ -27,6 +27,15 @@ export declare class CheckinController {
         realizadoEm: Date;
         colaboradorId: string;
     })[]>;
+    buscarPorId(id: string, user: {
+        usuarioId: string;
+        papel: string;
+    }): Promise<{
+        id: string;
+        humor: import("@prisma/client").$Enums.HumorTipo;
+        nivelEstresse: number;
+        realizadoEm: Date;
+    }>;
     buscarAnalise(id: string, user: {
         usuarioId: string;
         papel: string;

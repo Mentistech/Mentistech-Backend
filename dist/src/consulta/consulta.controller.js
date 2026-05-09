@@ -31,6 +31,12 @@ let ConsultaController = class ConsultaController {
     listarMinhas(user) {
         return this.consultaService.listarMinhas(user.usuarioId, user.papel);
     }
+    buscarPorId(id, user) {
+        return this.consultaService.buscarPorId(id, user.usuarioId, user.papel);
+    }
+    cancelar(id, user) {
+        return this.consultaService.cancelar(id, user.usuarioId);
+    }
     atualizarStatus(id, dto, user) {
         return this.consultaService.atualizarStatus(id, dto, user.usuarioId);
     }
@@ -52,6 +58,23 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", void 0)
 ], ConsultaController.prototype, "listarMinhas", null);
+__decorate([
+    (0, common_1.Get)(':id'),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, current_user_decorator_1.CurrentUser)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", void 0)
+], ConsultaController.prototype, "buscarPorId", null);
+__decorate([
+    (0, common_1.Delete)(':id'),
+    (0, roles_decorator_1.Roles)(client_1.PapelUsuario.COLABORADOR),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, current_user_decorator_1.CurrentUser)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", void 0)
+], ConsultaController.prototype, "cancelar", null);
 __decorate([
     (0, common_1.Patch)(':id/status'),
     (0, roles_decorator_1.Roles)(client_1.PapelUsuario.PSICOLOGO),

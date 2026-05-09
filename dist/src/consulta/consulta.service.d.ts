@@ -24,10 +24,44 @@ export declare class ConsultaService {
         } | null;
         psicologo: {
             usuario: {
-                email: string;
+                nome: string;
+            };
+            crp: string | null;
+            especialidade: string | null;
+            id: string;
+            usuarioId: string;
+        };
+    } & {
+        id: string;
+        colaboradorId: string;
+        psicologoId: string;
+        analiseId: string | null;
+        dataHora: Date;
+        observacoes: string | null;
+        status: import("@prisma/client").$Enums.StatusConsulta;
+    }>;
+    buscarPorId(consultaId: string, usuarioId: string, papel: string): Promise<{
+        colaborador: {
+            usuario: {
                 nome: string;
             };
         } & {
+            departamento: string | null;
+            cargo: string | null;
+            id: string;
+            usuarioId: string;
+        };
+        analise: {
+            id: string;
+            respostaIa: string | null;
+            conteudoPsicologico: string | null;
+            geradoEm: Date;
+            checkinId: string;
+        } | null;
+        psicologo: {
+            usuario: {
+                nome: string;
+            };
             crp: string | null;
             especialidade: string | null;
             id: string;
@@ -53,15 +87,17 @@ export declare class ConsultaService {
             id: string;
             usuarioId: string;
         };
+        analise: {
+            id: string;
+            respostaIa: string | null;
+            conteudoPsicologico: string | null;
+            geradoEm: Date;
+            checkinId: string;
+        } | null;
         psicologo: {
             usuario: {
                 nome: string;
             };
-            crp: string | null;
-            especialidade: string | null;
-            id: string;
-            usuarioId: string;
-        } & {
             crp: string | null;
             especialidade: string | null;
             id: string;
@@ -76,6 +112,15 @@ export declare class ConsultaService {
         observacoes: string | null;
         status: import("@prisma/client").$Enums.StatusConsulta;
     })[]>;
+    cancelar(consultaId: string, usuarioId: string): Promise<{
+        id: string;
+        colaboradorId: string;
+        psicologoId: string;
+        analiseId: string | null;
+        dataHora: Date;
+        observacoes: string | null;
+        status: import("@prisma/client").$Enums.StatusConsulta;
+    }>;
     atualizarStatus(consultaId: string, dto: UpdateStatusDto, usuarioId: string): Promise<{
         id: string;
         colaboradorId: string;

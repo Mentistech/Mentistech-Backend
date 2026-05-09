@@ -35,4 +35,7 @@ export declare class PsicologoService {
         horaInicio: string;
         horaFim: string;
     }>;
+    removerDisponibilidade(disponibilidadeId: string, usuarioId: string): Promise<{
+        mensagem: string;
+    }>;
 }

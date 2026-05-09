@@ -14,21 +14,26 @@ const common_1 = require("@nestjs/common");
 const client_1 = require("@prisma/client");
 const prisma_service_1 = require("../prisma/prisma.service");
 const DIAS_SEMANA = ['DOMINGO', 'SEGUNDA', 'TERCA', 'QUARTA', 'QUINTA', 'SEXTA', 'SABADO'];
+const CONSULTA_INCLUDE = {
+    colaborador: { include: { usuario: { select: { nome: true } } } },
+    psicologo: {
+        select: {
+            id: true, crp: true, especialidade: true, usuarioId: true,
+            usuario: { select: { nome: true } },
+        },
+    },
+    analise: true,
+};
 let ConsultaService = class ConsultaService {
     prisma;
     constructor(prisma) {
         this.prisma = prisma;
     }
     async agendar(dto, usuarioId) {
-        const colaborador = await this.prisma.perfilColaborador.findUnique({
-            where: { usuarioId },
-        });
-        if (!colaborador) {
+        const colaborador = await this.prisma.perfilColaborador.findUnique({ where: { usuarioId } });
+        if (!colaborador)
             throw new common_1.ForbiddenException('Apenas colaboradores podem agendar consultas');
-        }
-        const psicologo = await this.prisma.perfilPsicologo.findUnique({
-            where: { id: dto.psicologoId },
-        });
+        const psicologo = await this.prisma.perfilPsicologo.findUnique({ where: { id: dto.psicologoId } });
         if (!psicologo)
             throw new common_1.NotFoundException('Psicólogo não encontrado');
         const dataHora = new Date(dto.dataHora);
@@ -58,59 +63,74 @@ let ConsultaService = class ConsultaService {
                 dataHora,
                 observacoes: dto.observacoes,
             },
-            include: {
-                colaborador: { include: { usuario: { select: { nome: true } } } },
-                psicologo: { include: { usuario: { select: { nome: true, email: true } } } },
-                analise: true,
-            },
+            include: CONSULTA_INCLUDE,
         });
+    }
+    async buscarPorId(consultaId, usuarioId, papel) {
+        const consulta = await this.prisma.consulta.findUnique({
+            where: { id: consultaId },
+            include: CONSULTA_INCLUDE,
+        });
+        if (!consulta)
+            throw new common_1.NotFoundException('Consulta não encontrada');
+        if (papel === 'COLABORADOR') {
+            const colaborador = await this.prisma.perfilColaborador.findUnique({ where: { usuarioId } });
+            if (!colaborador || consulta.colaboradorId !== colaborador.id) {
+                throw new common_1.ForbiddenException('Acesso negado a esta consulta');
+            }
+        }
+        else {
+            const psicologo = await this.prisma.perfilPsicologo.findUnique({ where: { usuarioId } });
+            if (!psicologo || consulta.psicologoId !== psicologo.id) {
+                throw new common_1.ForbiddenException('Acesso negado a esta consulta');
+            }
+        }
+        return consulta;
     }
     async listarMinhas(usuarioId, papel) {
         if (papel === 'COLABORADOR') {
-            const colaborador = await this.prisma.perfilColaborador.findUnique({
-                where: { usuarioId },
-            });
+            const colaborador = await this.prisma.perfilColaborador.findUnique({ where: { usuarioId } });
             if (!colaborador)
                 throw new common_1.ForbiddenException('Perfil não encontrado');
             return this.prisma.consulta.findMany({
                 where: { colaboradorId: colaborador.id },
-                include: {
-                    colaborador: { include: { usuario: { select: { nome: true } } } },
-                    psicologo: {
-                        include: { usuario: { select: { nome: true } } },
-                        select: { id: true, crp: true, especialidade: true, usuarioId: true, usuario: { select: { nome: true } } },
-                    },
-                },
+                include: CONSULTA_INCLUDE,
                 orderBy: { dataHora: 'desc' },
             });
         }
-        const psicologo = await this.prisma.perfilPsicologo.findUnique({
-            where: { usuarioId },
-        });
+        const psicologo = await this.prisma.perfilPsicologo.findUnique({ where: { usuarioId } });
         if (!psicologo)
             throw new common_1.ForbiddenException('Perfil não encontrado');
         return this.prisma.consulta.findMany({
             where: { psicologoId: psicologo.id },
-            include: {
-                colaborador: { include: { usuario: { select: { nome: true } } } },
-                psicologo: {
-                    include: { usuario: { select: { nome: true } } },
-                    select: { id: true, crp: true, especialidade: true, usuarioId: true, usuario: { select: { nome: true } } },
-                },
-            },
+            include: CONSULTA_INCLUDE,
             orderBy: { dataHora: 'desc' },
         });
     }
-    async atualizarStatus(consultaId, dto, usuarioId) {
-        const consulta = await this.prisma.consulta.findUnique({
-            where: { id: consultaId },
-            include: { psicologo: true },
-        });
+    async cancelar(consultaId, usuarioId) {
+        const consulta = await this.prisma.consulta.findUnique({ where: { id: consultaId } });
         if (!consulta)
             throw new common_1.NotFoundException('Consulta não encontrada');
-        const psicologo = await this.prisma.perfilPsicologo.findUnique({
-            where: { usuarioId },
+        const colaborador = await this.prisma.perfilColaborador.findUnique({ where: { usuarioId } });
+        if (!colaborador || consulta.colaboradorId !== colaborador.id) {
+            throw new common_1.ForbiddenException('Apenas o colaborador dono da consulta pode cancelá-la');
+        }
+        if (consulta.status === client_1.StatusConsulta.REALIZADA) {
+            throw new common_1.BadRequestException('Não é possível cancelar uma consulta já realizada');
+        }
+        if (consulta.status === client_1.StatusConsulta.CANCELADA) {
+            throw new common_1.BadRequestException('Consulta já está cancelada');
+        }
+        return this.prisma.consulta.update({
+            where: { id: consultaId },
+            data: { status: client_1.StatusConsulta.CANCELADA },
         });
+    }
+    async atualizarStatus(consultaId, dto, usuarioId) {
+        const consulta = await this.prisma.consulta.findUnique({ where: { id: consultaId } });
+        if (!consulta)
+            throw new common_1.NotFoundException('Consulta não encontrada');
+        const psicologo = await this.prisma.perfilPsicologo.findUnique({ where: { usuarioId } });
         if (!psicologo || consulta.psicologoId !== psicologo.id) {
             throw new common_1.ForbiddenException('Apenas o psicólogo responsável pode alterar o status');
         }

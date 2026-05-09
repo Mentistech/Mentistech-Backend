@@ -34,6 +34,9 @@ let PsicologoController = class PsicologoController {
     criarDisponibilidade(dto, user) {
         return this.psicologoService.criarDisponibilidade(dto, user.usuarioId);
     }
+    removerDisponibilidade(id, user) {
+        return this.psicologoService.removerDisponibilidade(id, user.usuarioId);
+    }
 };
 exports.PsicologoController = PsicologoController;
 __decorate([
@@ -60,6 +63,15 @@ __decorate([
     __metadata("design:paramtypes", [criar_disponibilidade_dto_1.CriarDisponibilidadeDto, Object]),
     __metadata("design:returntype", void 0)
 ], PsicologoController.prototype, "criarDisponibilidade", null);
+__decorate([
+    (0, common_1.Delete)('disponibilidade/:id'),
+    (0, roles_decorator_1.Roles)(client_1.PapelUsuario.PSICOLOGO),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, current_user_decorator_1.CurrentUser)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", void 0)
+], PsicologoController.prototype, "removerDisponibilidade", null);
 exports.PsicologoController = PsicologoController = __decorate([
     (0, common_1.Controller)('psicologos'),
     __metadata("design:paramtypes", [psicologo_service_1.PsicologoService])

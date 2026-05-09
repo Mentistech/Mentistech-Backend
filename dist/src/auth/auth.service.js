@@ -63,37 +63,22 @@ let AuthService = class AuthService {
             throw new common_1.ConflictException('E-mail já cadastrado');
         const senhaHash = await bcrypt.hash(dto.senha, 10);
         const usuario = await this.prisma.usuario.create({
-            data: {
-                nome: dto.nome,
-                email: dto.email,
-                senhaHash,
-                papel: dto.papel,
-            },
+            data: { nome: dto.nome, email: dto.email, senhaHash, papel: dto.papel },
         });
         if (dto.papel === client_1.PapelUsuario.COLABORADOR) {
             await this.prisma.perfilColaborador.create({
-                data: {
-                    usuarioId: usuario.id,
-                    departamento: dto.departamento,
-                    cargo: dto.cargo,
-                },
+                data: { usuarioId: usuario.id, departamento: dto.departamento, cargo: dto.cargo },
             });
         }
         if (dto.papel === client_1.PapelUsuario.PSICOLOGO) {
             await this.prisma.perfilPsicologo.create({
-                data: {
-                    usuarioId: usuario.id,
-                    crp: dto.crp,
-                    especialidade: dto.especialidade,
-                },
+                data: { usuarioId: usuario.id, crp: dto.crp, especialidade: dto.especialidade },
             });
         }
         return this.gerarToken(usuario);
     }
     async login(dto) {
-        const usuario = await this.prisma.usuario.findUnique({
-            where: { email: dto.email },
-        });
+        const usuario = await this.prisma.usuario.findUnique({ where: { email: dto.email } });
         if (!usuario)
             throw new common_1.UnauthorizedException('Credenciais inválidas');
         const senhaValida = await bcrypt.compare(dto.senha, usuario.senhaHash);
@@ -101,13 +86,48 @@ let AuthService = class AuthService {
             throw new common_1.UnauthorizedException('Credenciais inválidas');
         return this.gerarToken(usuario);
     }
+    async me(usuarioId) {
+        const usuario = await this.prisma.usuario.findUnique({
+            where: { id: usuarioId },
+            select: {
+                id: true,
+                nome: true,
+                email: true,
+                papel: true,
+                criadoEm: true,
+                perfilColaborador: { select: { id: true, departamento: true, cargo: true } },
+                perfilPsicologo: { select: { id: true, crp: true, especialidade: true } },
+            },
+        });
+        if (!usuario)
+            throw new common_1.NotFoundException('Usuário não encontrado');
+        return usuario;
+    }
+    async atualizarPerfil(usuarioId, dto) {
+        const usuario = await this.prisma.usuario.findUnique({ where: { id: usuarioId } });
+        if (!usuario)
+            throw new common_1.NotFoundException('Usuário não encontrado');
+        const updates = [];
+        if (dto.nome) {
+            updates.push(this.prisma.usuario.update({ where: { id: usuarioId }, data: { nome: dto.nome } }));
+        }
+        if (usuario.papel === client_1.PapelUsuario.COLABORADOR) {
+            updates.push(this.prisma.perfilColaborador.update({
+                where: { usuarioId },
+                data: { departamento: dto.departamento, cargo: dto.cargo },
+            }));
+        }
+        if (usuario.papel === client_1.PapelUsuario.PSICOLOGO) {
+            updates.push(this.prisma.perfilPsicologo.update({
+                where: { usuarioId },
+                data: { crp: dto.crp, especialidade: dto.especialidade },
+            }));
+        }
+        await Promise.all(updates);
+        return this.me(usuarioId);
+    }
     gerarToken(usuario) {
-        const payload = {
-            sub: usuario.id,
-            email: usuario.email,
-            papel: usuario.papel,
-            nome: usuario.nome,
-        };
+        const payload = { sub: usuario.id, email: usuario.email, papel: usuario.papel, nome: usuario.nome };
         return {
             token: this.jwtService.sign(payload),
             papel: usuario.papel,
