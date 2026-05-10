@@ -6,8 +6,8 @@ import {
 } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { DiaSemana, StatusConsulta } from '@prisma/client';
-import { PrismaService } from '../prisma/prisma.service';
-import { ConsultaService } from './consulta.service';
+import { PrismaService } from '../../../src/prisma/prisma.service';
+import { ConsultaService } from '../../../src/consulta/consulta.service';
 
 const mockPrisma = {
   perfilColaborador: { findUnique: jest.fn() },

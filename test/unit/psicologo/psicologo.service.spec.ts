@@ -1,8 +1,8 @@
 import { BadRequestException, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { DiaSemana } from '@prisma/client';
-import { PrismaService } from '../prisma/prisma.service';
-import { PsicologoService } from './psicologo.service';
+import { PrismaService } from '../../../src/prisma/prisma.service';
+import { PsicologoService } from '../../../src/psicologo/psicologo.service';
 
 const mockPrisma = {
   perfilPsicologo: { findMany: jest.fn(), findUnique: jest.fn() },
