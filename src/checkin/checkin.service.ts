@@ -97,15 +97,25 @@ export class CheckinService {
       if (!perfil || checkin.colaboradorId !== perfil.id) {
         throw new ForbiddenException('Acesso negado a este check-in');
       }
+
+      // colaborador vê apenas respostaIa — sem conteudoPsicologico
+      return {
+        id: checkin.id,
+        humor: checkin.humor,
+        nivelEstresse: checkin.nivelEstresse,
+        realizadoEm: checkin.realizadoEm,
+        respostaIa: checkin.analise?.respostaIa ?? null,
+        geradoEm: checkin.analise?.geradoEm ?? null,
+      };
     }
 
+    // psicólogo vê tudo incluindo conteudoPsicologico
     return {
       id: checkin.id,
       humor: checkin.humor,
       nivelEstresse: checkin.nivelEstresse,
       realizadoEm: checkin.realizadoEm,
-      respostaIa: checkin.analise?.respostaIa ?? null,
-      geradoEm: checkin.analise?.geradoEm ?? null,
+      analise: checkin.analise,
     };
   }
 }
