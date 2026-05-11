@@ -23,14 +23,29 @@ export class CheckinService {
       data: { colaboradorId: perfil.id, humor: dto.humor, nivelEstresse: dto.nivelEstresse },
     });
 
-    const { respostaIa, conteudoPsicologico } =
-      await this.anthropicService.analisarCheckin(dto.humor, dto.nivelEstresse);
+    // IA é opcional — se falhar, o checkin salva normalmente
+    let respostaIa: string | null = null;
+    try {
+      const analise = await this.anthropicService.analisarCheckin(dto.humor, dto.nivelEstresse);
+      respostaIa = analise.respostaIa;
+      await this.prisma.analiseIa.create({
+        data: {
+          checkinId: checkin.id,
+          respostaIa: analise.respostaIa,
+          conteudoPsicologico: analise.conteudoPsicologico,
+        },
+      });
+    } catch {
+      // sem chave da Anthropic ou falha na API — continua sem análise
+    }
 
-    await this.prisma.analiseIa.create({
-      data: { checkinId: checkin.id, respostaIa, conteudoPsicologico },
-    });
-
-    return { id: checkin.id, humor: checkin.humor, nivelEstresse: checkin.nivelEstresse, realizadoEm: checkin.realizadoEm, respostaIa };
+    return {
+      id: checkin.id,
+      humor: checkin.humor,
+      nivelEstresse: checkin.nivelEstresse,
+      realizadoEm: checkin.realizadoEm,
+      respostaIa,
+    };
   }
 
   async listarMeus(usuarioId: string) {
@@ -82,14 +97,6 @@ export class CheckinService {
       if (!perfil || checkin.colaboradorId !== perfil.id) {
         throw new ForbiddenException('Acesso negado a este check-in');
       }
-      return {
-        id: checkin.id,
-        humor: checkin.humor,
-        nivelEstresse: checkin.nivelEstresse,
-        realizadoEm: checkin.realizadoEm,
-        respostaIa: checkin.analise?.respostaIa ?? null,
-        geradoEm: checkin.analise?.geradoEm ?? null,
-      };
     }
 
     return {
@@ -97,7 +104,8 @@ export class CheckinService {
       humor: checkin.humor,
       nivelEstresse: checkin.nivelEstresse,
       realizadoEm: checkin.realizadoEm,
-      analise: checkin.analise,
+      respostaIa: checkin.analise?.respostaIa ?? null,
+      geradoEm: checkin.analise?.geradoEm ?? null,
     };
   }
 }
