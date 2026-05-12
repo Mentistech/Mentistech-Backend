@@ -1,9 +1,9 @@
 import { ForbiddenException, NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { HumorTipo } from '@prisma/client';
-import { PrismaService } from '../prisma/prisma.service';
-import { AnthropicService } from './anthropic.service';
-import { CheckinService } from './checkin.service';
+import { PrismaService } from '../../../src/prisma/prisma.service';
+import { AnthropicService } from '../../../src/checkin/anthropic.service';
+import { CheckinService } from '../../../src/checkin/checkin.service';
 
 const mockPrisma = {
   perfilColaborador: { findUnique: jest.fn() },

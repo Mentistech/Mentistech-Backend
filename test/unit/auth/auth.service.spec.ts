@@ -3,8 +3,8 @@ import { JwtService } from '@nestjs/jwt';
 import { Test, TestingModule } from '@nestjs/testing';
 import { PapelUsuario } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
-import { PrismaService } from '../prisma/prisma.service';
-import { AuthService } from './auth.service';
+import { PrismaService } from '../../../src/prisma/prisma.service';
+import { AuthService } from '../../../src/auth/auth.service';
 
 const mockPrisma = {
   usuario: {
