@@ -13,7 +13,7 @@ import { UpdateStatusDto } from './dto/update-status.dto';
 const DIAS_SEMANA = ['DOMINGO', 'SEGUNDA', 'TERCA', 'QUARTA', 'QUINTA', 'SEXTA', 'SABADO'];
 
 const CONSULTA_INCLUDE = {
-  colaborador: { include: { usuario: { select: { nome: true } } } },
+  colaborador: { include: { usuario: { select: { nome: true, email: true } } } },
   psicologo: {
     select: {
       id: true, crp: true, especialidade: true, usuarioId: true,
@@ -96,22 +96,35 @@ export class ConsultaService {
     if (papel === 'COLABORADOR') {
       const colaborador = await this.prisma.perfilColaborador.findUnique({ where: { usuarioId } });
       if (!colaborador) throw new ForbiddenException('Perfil não encontrado');
-
-      return this.prisma.consulta.findMany({
+      const consultas = await this.prisma.consulta.findMany({
         where: { colaboradorId: colaborador.id },
         include: CONSULTA_INCLUDE,
         orderBy: { dataHora: 'desc' },
       });
+      return consultas.map(c => ({
+        ...c,
+        psicologo: {
+          ...c.psicologo,
+          nome: c.psicologo?.usuario?.nome,
+        },
+      }));
     }
 
     const psicologo = await this.prisma.perfilPsicologo.findUnique({ where: { usuarioId } });
     if (!psicologo) throw new ForbiddenException('Perfil não encontrado');
-
-    return this.prisma.consulta.findMany({
+    const consultas = await this.prisma.consulta.findMany({
       where: { psicologoId: psicologo.id },
       include: CONSULTA_INCLUDE,
       orderBy: { dataHora: 'desc' },
     });
+    return consultas.map(c => ({
+      ...c,
+      colaborador: {
+        ...c.colaborador,
+        nome: c.colaborador?.usuario?.nome,
+        email: c.colaborador?.usuario?.email,
+      },
+    }));
   }
 
   async cancelar(consultaId: string, usuarioId: string) {
@@ -138,6 +151,7 @@ export class ConsultaService {
   }
 
   async atualizarStatus(consultaId: string, dto: UpdateStatusDto, usuarioId: string) {
+    console.log('atualizarStatus chamado:', { consultaId, dto, usuarioId });
     const consulta = await this.prisma.consulta.findUnique({ where: { id: consultaId } });
     if (!consulta) throw new NotFoundException('Consulta não encontrada');
 
