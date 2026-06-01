@@ -22,7 +22,7 @@ const perfilMock = { id: 'perfil-1', usuarioId: 'user-1' };
 const checkinMock = {
   id: 'checkin-1',
   colaboradorId: 'perfil-1',
-  humor: HumorTipo.BEM,
+  humor: HumorTipo.BOM,
   nivelEstresse: 3,
   realizadoEm: new Date(),
 };
@@ -47,7 +47,7 @@ describe('CheckinService', () => {
     it('lança ForbiddenException se usuário não é colaborador', async () => {
       mockPrisma.perfilColaborador.findUnique.mockResolvedValue(null);
       await expect(
-        service.realizarCheckin({ humor: HumorTipo.BEM, nivelEstresse: 3 }, 'user-1'),
+        service.realizarCheckin({ humor: HumorTipo.BOM, nivelEstresse: 3 }, 'user-1'),
       ).rejects.toThrow(ForbiddenException);
     });
 
@@ -56,9 +56,9 @@ describe('CheckinService', () => {
       mockPrisma.checkinEmocional.create.mockResolvedValue(checkinMock);
       mockPrisma.analiseIa.create.mockResolvedValue({});
 
-      const result = await service.realizarCheckin({ humor: HumorTipo.BEM, nivelEstresse: 3 }, 'user-1');
+      const result = await service.realizarCheckin({ humor: HumorTipo.BOM, nivelEstresse: 3 }, 'user-1');
 
-      expect(mockAnthropic.analisarCheckin).toHaveBeenCalledWith(HumorTipo.BEM, 3);
+      expect(mockAnthropic.analisarCheckin).toHaveBeenCalledWith(HumorTipo.BOM, 3);
       expect(mockPrisma.analiseIa.create).toHaveBeenCalledTimes(1);
       expect(result.respostaIa).toBe('Você parece bem!');
       expect(result).not.toHaveProperty('conteudoPsicologico');
