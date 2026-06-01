@@ -15,6 +15,7 @@ const mockAnthropic = {
   analisarCheckin: jest.fn().mockResolvedValue({
     respostaIa: 'Você parece bem!',
     conteudoPsicologico: 'Nível de estresse moderado.',
+    sugestoes: ['Faça uma pausa de 5 minutos', 'Pratique respiração profunda'],
   }),
 };
 
@@ -61,6 +62,7 @@ describe('CheckinService', () => {
       expect(mockAnthropic.analisarCheckin).toHaveBeenCalledWith(HumorTipo.BEM, 3);
       expect(mockPrisma.analiseIa.create).toHaveBeenCalledTimes(1);
       expect(result.respostaIa).toBe('Você parece bem!');
+      expect(result.sugestoes).toEqual(['Faça uma pausa de 5 minutos', 'Pratique respiração profunda']);
       expect(result).not.toHaveProperty('conteudoPsicologico');
     });
   });
@@ -118,13 +120,14 @@ describe('CheckinService', () => {
     });
 
     it('NÃO retorna conteudoPsicologico para colaborador', async () => {
-      const analise = { respostaIa: 'Resposta', conteudoPsicologico: 'Análise técnica', geradoEm: new Date() };
+      const analise = { respostaIa: 'Resposta', conteudoPsicologico: 'Análise técnica', sugestoes: ['Respire fundo'], geradoEm: new Date() };
       mockPrisma.checkinEmocional.findUnique.mockResolvedValue({ ...checkinMock, analise, colaborador: perfilMock });
       mockPrisma.perfilColaborador.findUnique.mockResolvedValue(perfilMock);
 
       const result = await service.buscarAnalise('checkin-1', { usuarioId: 'user-1', papel: 'COLABORADOR' });
       expect((result as any).conteudoPsicologico).toBeUndefined();
       expect((result as any).respostaIa).toBe('Resposta');
+      expect((result as any).sugestoes).toEqual(['Respire fundo']);
     });
   });
 });

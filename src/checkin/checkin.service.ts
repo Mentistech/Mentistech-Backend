@@ -25,14 +25,17 @@ export class CheckinService {
 
     // IA é opcional — se falhar, o checkin salva normalmente
     let respostaIa: string | null = null;
+    let sugestoes: string[] = [];
     try {
       const analise = await this.anthropicService.analisarCheckin(dto.humor, dto.nivelEstresse);
       respostaIa = analise.respostaIa;
+      sugestoes = analise.sugestoes;
       await this.prisma.analiseIa.create({
         data: {
           checkinId: checkin.id,
           respostaIa: analise.respostaIa,
           conteudoPsicologico: analise.conteudoPsicologico,
+          sugestoes: analise.sugestoes,
         },
       });
     } catch {
@@ -45,6 +48,7 @@ export class CheckinService {
       nivelEstresse: checkin.nivelEstresse,
       realizadoEm: checkin.realizadoEm,
       respostaIa,
+      sugestoes,
     };
   }
 
@@ -105,6 +109,7 @@ export class CheckinService {
         nivelEstresse: checkin.nivelEstresse,
         realizadoEm: checkin.realizadoEm,
         respostaIa: checkin.analise?.respostaIa ?? null,
+        sugestoes: checkin.analise?.sugestoes ?? [],
         geradoEm: checkin.analise?.geradoEm ?? null,
       };
     }

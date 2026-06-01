@@ -4,4 +4,5 @@ export class CheckinResponseDto {
   nivelEstresse: number;
   realizadoEm: Date;
   respostaIa: string | null;
+  sugestoes: string[];
 }

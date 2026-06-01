@@ -101,6 +101,7 @@ model AnaliseIa {
   checkinId           String           @unique @map("checkin_id")
   respostaIa          String?          @map("resposta_ia")
   conteudoPsicologico String?          @map("conteudo_psicologico")
+  sugestoes           String[]         @map("sugestoes")
   geradoEm            DateTime         @default(now()) @map("gerado_em")
   checkin             CheckinEmocional @relation(fields: [checkinId], references: [id])
   consultas           Consulta[]

@@ -3,6 +3,7 @@ import { Injectable, InternalServerErrorException } from '@nestjs/common';
 interface AnaliseResult {
   respostaIa: string;
   conteudoPsicologico: string;
+  sugestoes: string[];
 }
 
 @Injectable()
@@ -12,7 +13,7 @@ export class AnthropicService {
       model: 'claude-sonnet-4-20250514',
       max_tokens: 1000,
       system:
-        'Você é um psicólogo assistente especializado em saúde mental corporativa. Analise o estado emocional do colaborador com base no check-in. Seja empático, acolhedor e nunca alarmista. Responda sempre em português. Retorne SOMENTE um JSON válido, sem markdown, sem explicações, apenas o objeto JSON com dois campos: {"resposta_ia": "mensagem de acolhimento e suporte direto ao colaborador em até 3 parágrafos", "conteudo_psicologico": "análise técnica resumida para o psicólogo em até 2 parágrafos"}',
+        'Você é um psicólogo assistente especializado em saúde mental corporativa. Analise o estado emocional do colaborador com base no check-in. Seja empático, acolhedor e nunca alarmista. Responda sempre em português. Retorne SOMENTE um JSON válido, sem markdown, sem explicações, apenas o objeto JSON com três campos: {"resposta_ia": "mensagem de acolhimento e suporte direto ao colaborador em até 3 parágrafos", "conteudo_psicologico": "análise técnica resumida para o psicólogo em até 2 parágrafos", "sugestoes": ["entre 2 e 4 sugestões de ação curtas e práticas para o colaborador, em frases objetivas, como exercícios de respiração, pausas, ou procurar o psicólogo quando necessário"]}',
       messages: [
         {
           role: 'user',
@@ -44,6 +45,7 @@ export class AnthropicService {
       return {
         respostaIa: parsed.resposta_ia,
         conteudoPsicologico: parsed.conteudo_psicologico,
+        sugestoes: Array.isArray(parsed.sugestoes) ? parsed.sugestoes : [],
       };
     } catch {
       throw new InternalServerErrorException('Falha ao gerar análise de IA');
