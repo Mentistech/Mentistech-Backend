@@ -51,12 +51,12 @@ export class CheckinService {
   async listarMeus(usuarioId: string) {
     const perfil = await this.prisma.perfilColaborador.findUnique({ where: { usuarioId } });
     if (!perfil) throw new ForbiddenException('Apenas colaboradores podem listar check-ins');
-
-    return this.prisma.checkinEmocional.findMany({
+    const checkins = await this.prisma.checkinEmocional.findMany({
       where: { colaboradorId: perfil.id },
       include: { analise: { select: { respostaIa: true, geradoEm: true } } },
       orderBy: { realizadoEm: 'desc' },
     });
+    return checkins.map(c => ({ ...c, criadoEm: c.realizadoEm }));
   }
 
   async buscarPorId(checkinId: string, usuario: UsuarioLogado) {
@@ -105,6 +105,8 @@ export class CheckinService {
         nivelEstresse: checkin.nivelEstresse,
         realizadoEm: checkin.realizadoEm,
         respostaIa: checkin.analise?.respostaIa ?? null,
+        texto: checkin.analise?.respostaIa ?? null,
+        analise: checkin.analise?.respostaIa ?? null,
         geradoEm: checkin.analise?.geradoEm ?? null,
       };
     }

@@ -12,11 +12,11 @@ enum PapelUsuario {
 }
 
 enum HumorTipo {
-  MUITO_BEM
-  BEM
+  OTIMO
+  BOM
   NEUTRO
-  MAL
-  MUITO_MAL
+  RUIM
+  PESSIMO
 }
 
 enum StatusConsulta {
