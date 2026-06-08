@@ -71,7 +71,7 @@ describe('CheckinService', () => {
       mockPrisma.perfilColaborador.findUnique.mockResolvedValue(perfilMock);
       mockPrisma.checkinEmocional.create.mockResolvedValue(checkinMock);
 
-      const result = await service.realizarCheckin({ humor: HumorTipo.MAL, nivelEstresse: 8 }, 'user-1');
+      const result = await service.realizarCheckin({ humor: HumorTipo.NEUTRO, nivelEstresse: 8 }, 'user-1');
 
       expect(result.respostaIa).toBeNull();
       expect(result.analise).toBeNull();
