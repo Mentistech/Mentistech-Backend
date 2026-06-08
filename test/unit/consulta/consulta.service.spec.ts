@@ -173,6 +173,39 @@ describe('ConsultaService', () => {
     });
   });
 
+  describe('buscarPorId', () => {
+    it('lança NotFoundException se consulta não existe', async () => {
+      mockPrisma.consulta.findUnique.mockResolvedValue(null);
+      await expect(service.buscarPorId('cons-x', 'user-col-1', 'COLABORADOR')).rejects.toThrow(NotFoundException);
+    });
+
+    it('lança ForbiddenException se colaborador acessa consulta de outro', async () => {
+      mockPrisma.consulta.findUnique.mockResolvedValue({ ...consultaMock, colaboradorId: 'outro-col' });
+      mockPrisma.perfilColaborador.findUnique.mockResolvedValue(colaboradorMock);
+      await expect(service.buscarPorId('cons-1', 'user-col-1', 'COLABORADOR')).rejects.toThrow(ForbiddenException);
+    });
+
+    it('lança ForbiddenException se psicólogo acessa consulta de outro', async () => {
+      mockPrisma.consulta.findUnique.mockResolvedValue({ ...consultaMock, psicologoId: 'outro-psi' });
+      mockPrisma.perfilPsicologo.findUnique.mockResolvedValue(psicologoMock);
+      await expect(service.buscarPorId('cons-1', 'user-psi-1', 'PSICOLOGO')).rejects.toThrow(ForbiddenException);
+    });
+
+    it('retorna consulta para o colaborador dono', async () => {
+      mockPrisma.consulta.findUnique.mockResolvedValue(consultaMock);
+      mockPrisma.perfilColaborador.findUnique.mockResolvedValue(colaboradorMock);
+      const result = await service.buscarPorId('cons-1', 'user-col-1', 'COLABORADOR');
+      expect(result.id).toBe('cons-1');
+    });
+
+    it('retorna consulta para o psicólogo responsável', async () => {
+      mockPrisma.consulta.findUnique.mockResolvedValue(consultaMock);
+      mockPrisma.perfilPsicologo.findUnique.mockResolvedValue(psicologoMock);
+      const result = await service.buscarPorId('cons-1', 'user-psi-1', 'PSICOLOGO');
+      expect(result.id).toBe('cons-1');
+    });
+  });
+
   describe('listarMinhas', () => {
     it('retorna consultas do colaborador', async () => {
       mockPrisma.perfilColaborador.findUnique.mockResolvedValue(colaboradorMock);

@@ -8,7 +8,7 @@ import { CheckinService } from '../../../src/checkin/checkin.service';
 const mockPrisma = {
   perfilColaborador: { findUnique: jest.fn() },
   checkinEmocional: { create: jest.fn(), findMany: jest.fn(), findUnique: jest.fn() },
-  analiseIa: { create: jest.fn() },
+  analiseIa: { create: jest.fn(), findUnique: jest.fn() },
 };
 
 const mockAnthropic = {
@@ -55,13 +55,27 @@ describe('CheckinService', () => {
       mockPrisma.perfilColaborador.findUnique.mockResolvedValue(perfilMock);
       mockPrisma.checkinEmocional.create.mockResolvedValue(checkinMock);
       mockPrisma.analiseIa.create.mockResolvedValue({});
+      mockPrisma.analiseIa.findUnique.mockResolvedValue({ id: 'analise-1' });
 
       const result = await service.realizarCheckin({ humor: HumorTipo.BEM, nivelEstresse: 3 }, 'user-1');
 
       expect(mockAnthropic.analisarCheckin).toHaveBeenCalledWith(HumorTipo.BEM, 3);
       expect(mockPrisma.analiseIa.create).toHaveBeenCalledTimes(1);
       expect(result.respostaIa).toBe('Você parece bem!');
+      expect(result.analise).toEqual({ id: 'analise-1' });
       expect(result).not.toHaveProperty('conteudoPsicologico');
+    });
+
+    it('retorna checkin mesmo quando a IA falha (respostaIa null)', async () => {
+      mockAnthropic.analisarCheckin.mockRejectedValueOnce(new Error('API indisponível'));
+      mockPrisma.perfilColaborador.findUnique.mockResolvedValue(perfilMock);
+      mockPrisma.checkinEmocional.create.mockResolvedValue(checkinMock);
+
+      const result = await service.realizarCheckin({ humor: HumorTipo.MAL, nivelEstresse: 8 }, 'user-1');
+
+      expect(result.respostaIa).toBeNull();
+      expect(result.analise).toBeNull();
+      expect(mockPrisma.analiseIa.create).not.toHaveBeenCalled();
     });
   });
 
