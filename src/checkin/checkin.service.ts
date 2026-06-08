@@ -39,12 +39,17 @@ export class CheckinService {
       // sem chave da Anthropic ou falha na API — continua sem análise
     }
 
+    const analise = respostaIa
+      ? await this.prisma.analiseIa.findUnique({ where: { checkinId: checkin.id }, select: { id: true } })
+      : null;
+
     return {
       id: checkin.id,
       humor: checkin.humor,
       nivelEstresse: checkin.nivelEstresse,
       realizadoEm: checkin.realizadoEm,
       respostaIa,
+      analise: analise ? { id: analise.id } : null,
     };
   }
 
